@@ -126,8 +126,7 @@ ggplot(heart,aes(x = Genotype,
   xlab("Naa10 genotype")+
   ylab("NAA10 signal normalized to
        REVERT total protein stain")+
-  ggtitle("NAA10 levels in Naa10
-          heterozygous mutant heart and liver")
+  ggtitle("")
 ```
 
 
