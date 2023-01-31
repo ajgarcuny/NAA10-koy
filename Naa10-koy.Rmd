@@ -1,0 +1,239 @@
+---
+title: "Naa10-koy"
+author: "Andrew Garcia"
+date: "2023-01-31"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+
+heart <- read.csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vRL7DxP9iAmk45qq_UyZQTG7nRE5qi2VIBQ3Ln4gY2tIBLUNiNmFdT1QkoAxlOORA/pub?gid=1850069092&single=true&output=csv", header = T)
+
+
+```
+
+```{r}
+head(heart)
+
+##double-check genotypes of biological replicates
+```
+
+
+```{r}
+##switched Name and Replicate fromn integers to factors
+heart$Name <- as.factor(heart$Name)
+heart$Replicate <- as.factor (heart$Replicate)
+heart$Genotype <- as.factor(heart$Genotype)
+heart$Organ <- as.factor(heart$Organ)
+
+head(heart)
+
+##changed Name and Replicate from integer data to replicate data
+```
+```{r}
+ggplot(heart,aes(x = Genotype,
+                 y = Normalized.Signal,
+                 color = Name,
+                 shape = Replicate))+
+  geom_point()+
+  ylab("NAA10 signal normalized to
+       REVERT total protein stain")+
+  ggtitle("NAA10 levels in Naa10
+          heterozygous mutant heart")
+
+##if we added jitter as another layer, the data points would be duplicated
+##in the resultant plot!
+```
+
+
+
+
+##Group-mean datasets in dplyr
+```{r}
+#I am more familiar with using summarySE in Rmisc to generate a dataframe that contains group means
+
+heart_gd <- group_by(heart,Genotype)
+
+heart_gd <- summarise(heart)
+
+heart_gd
+```
+
+
+#Summary data of Naa10 het heart and hypothesis testing
+```{r}
+
+install.packages("Rmisc", repos = "http://cran.us.r-project.org")
+
+```
+
+```{r}
+##Summary statistics for Normalized NAA10 signal, grouped by genotype and technical replicate
+##Replicate grouping pertains to replicate blot grouping
+
+library(Rmisc)
+heart_sum <- summarySE(heart, measurevar="Normalized.Signal", groupvars=c("Genotype","Replicate"))
+
+heart_sum
+```
+
+
+
+```{r}
+##Normalized NAA10 signal is grouped by genotype.
+##N = 6 for both genotypes because the 3 biological replicates in each genotype were assayed twice
+##this gives me the group mean dataframe that I will need to layer onto the plot of individual observartions
+
+heart_sum1 <- summarySE(heart, measurevar="Normalized.Signal", groupvars=c("Genotype"))
+
+heart_sum1
+```
+
+```{r}
+#group means plus standards
+#essentially looking to plot this onto the individual data plot
+ggplot(heart_sum1, aes(x = Genotype, y = Normalized.Signal))+
+  geom_point()+
+  geom_errorbar(aes(ymin = Normalized.Signal - sd,
+                ymax = Normalized.Signal + sd))
+```
+
+###individual data and group means plot
+```{r}
+#ggplot(heart) plots Normalized.Signal as a function of Genotype
+#geom_point plots individual observations on this plot
+#geom_errorbar points to my group means df heart_sum1 and the bounds of the mean+/- standard error bar
+#the successive geom_point plots the mean; specify color so it does not conflict with the color call in the first geom_point
+
+ggplot(heart,aes(x = Genotype,
+                 y = Normalized.Signal))+
+  geom_point(aes(color = Name,
+                 shape = Organ),
+             alpha = 1.0)+
+  geom_errorbar(data = heart_sum1,
+                aes(ymin = Normalized.Signal-sd,
+                    ymax = Normalized.Signal+sd,
+                    width = 0.2))+
+  geom_point(data = heart_sum1,
+             size = 0.4,
+             alpha = 1.0,
+             color = "red")+
+  xlab("Naa10 genotype")+
+  ylab("NAA10 signal normalized to
+       REVERT total protein stain")+
+  ggtitle("NAA10 levels in Naa10
+          heterozygous mutant heart and liver")
+```
+
+
+
+
+
+###dplyr group data
+```{r}
+
+```
+
+
+
+##Unpaired t-test of NAA10 signal grouped by Genotype
+
+Null hypothesis: there is no mean difference in NAA10 signal between Naa10 female
+genotypes
+
+Alternative: there is a difference in NAA10 signal between Naa10 female genotypes
+```{r}
+t.test(heart$Normalized.Signal~heart$Genotype,
+       paired = F,
+       var.equal = FALSE)
+```
+
+
+According to Welch's two sample t-test, there is a significant difference in
+NAA10 signal between Naa10 female genotypes (t = -14.5, df = 9.9, p < 0.05).
+
+
+##paired t-test of NAA10 signal between replicates of individual animals
+
+Null hypothesis: there is no difference in NAA10 signal of individual livers on replicate blots
+Alternative hypothesis: there is a difference in NAA10 signal of individual livers on replicate blots
+
+According to the paired t-test (t = -0.18, df = 5, p = 0.87),
+I fail to reject the null hypothesis. Ie, when I analyze the normalized NAA10 signal
+in technical replicates of each biological replicate, there is no difference in the
+NAA10 signal between technical replicates.
+
+#Other plot ideas
+```{r}
+#plotted error bars for intra-subject variation
+#need also group error bar (mean +/- sd)
+gg_heart <- ggplot(heart,aes(x = Genotype,
+                 y = Normalized.Signal,
+                 color = Name,
+                 shape = Replicate))+
+  geom_point()+
+  ylab("NAA10 signal normalized to
+       REVERT total protein stain")+
+  ggtitle("NAA10 levels in Naa10
+          heterozygous mutant heart")
+
+gg_heart+
+  geom_errorbar(aes(ymin = Avg..Norm..Signal-Std..Dev.,
+                           ymax = Avg..Norm..Signal+Std..Dev.,),
+                position = "dodge",
+                width = 0.2)
+
+```
+
+```{r}
+ggplot(heart,aes(x = Genotype,
+                 y = Normalized.Signal,
+                 color = Name,))+
+  geom_point()+
+  geom_errorbar(aes(ymin = Avg..Norm..Signal-Std..Dev.,
+                    ymax = Avg..Norm..Signal+Std..Dev.,
+                    width = 0.2))+
+  ylab("NAA10 signal normalized to
+       REVERT total protein stain")+
+  ggtitle("NAA10 levels in Naa10
+          heterozygous mutant heart")
+```
+
+
+###Plotted by biological replicate
+```{r}
+ggplot(heart, aes(x = Name,
+                  y = Normalized.Signal,
+                  shape = Replicate,
+                  color = Genotype))+
+         geom_point()+
+  xlab("sample ID")+
+  ylab("NAA10 signal normalized to
+       REVERT total protein stain")+
+   ggtitle("NAA10 levels in Naa10
+          heterozygous mutant heart")
+
+```
+
+
+
+
+This plots absolute signal and indicates biological replicate (color) and
+technical replicate (shape)
+
+If I loaded a control sample (e.g., WT/Y or a pooled sample of all
+biological replicates in the WB dataset),
+I could plot fold-change.
+
+However, I am limited to plotting the absolute value of NAA10 signal.
+```{r}
+heart_fold <- read.csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vQ6Zsk-kGVqB3DlzX_VtZE5cRNqqM5NX5rfdp5t1kuEkH6PAKf76ozEFmqklqKIFZqWvjzcx_mOV5K6/pub?gid=194880494&single=true&output=csv",
+                       header = T)
+
+head(heart_fold)
+```
