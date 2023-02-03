@@ -169,6 +169,7 @@ ggplot(heart,aes(x = Organ,
 
 ###main fig; Organ fill?
 ```{r}
+library(ggplot2)
 ggplot(heart,aes(x = Genotype,
                  y = Normalized.Signal,
                  fill = Organ,
