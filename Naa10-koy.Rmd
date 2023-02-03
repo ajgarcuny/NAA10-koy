@@ -167,7 +167,7 @@ ggplot(heart,aes(x = Organ,
   theme_bw(base_size = 12, base_family = "Helvetica")
 ```
 
-###Organ fill?
+###main fig; Organ fill?
 ```{r}
 ggplot(heart,aes(x = Genotype,
                  y = Normalized.Signal,
