@@ -9,6 +9,14 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
+#Naa10 KO/Y and WT/Y NAA10 quantification
+Heart and liver lysates from biological replicates (n = 8) of Naa10 KO/Y (n = 4)
+and Naa10 WT/Y mice were immunoblotted. Blots of respective organ lysates were
+repeated twice.
+
+
+##Data
 ```{r}
 library(tidyverse)
 
@@ -35,6 +43,7 @@ head(heart)
 
 ##changed Name and Replicate from integer data to replicate data
 ```
+##distribution of NAA10 signal
 ```{r}
 ggplot(heart,aes(x = Genotype,
                  y = Normalized.Signal,
@@ -57,11 +66,7 @@ ggplot(heart,aes(x = Genotype,
 ```{r}
 #I am more familiar with using summarySE in Rmisc to generate a dataframe that contains group means
 
-heart_gd <- group_by(heart,Genotype)
 
-heart_gd <- summarise(heart)
-
-heart_gd
 ```
 
 
@@ -72,18 +77,20 @@ install.packages("Rmisc", repos = "http://cran.us.r-project.org")
 
 ```
 
+##Grouping by Genotype and Organ
 ```{r}
-##Summary statistics for Normalized NAA10 signal, grouped by genotype and technical replicate
+##Summary statistics for Normalized NAA10 signal
+##Possible groupings: genotype, replicate, organ
 ##Replicate grouping pertains to replicate blot grouping
 
 library(Rmisc)
-heart_sum <- summarySE(heart, measurevar="Normalized.Signal", groupvars=c("Genotype","Replicate"))
+heart_sum <- summarySE(heart, measurevar="Normalized.Signal", groupvars=c("Organ","Genotype"))
 
 heart_sum
 ```
 
 
-
+##Genotype group mean
 ```{r}
 ##Normalized NAA10 signal is grouped by genotype.
 ##N = 6 for both genotypes because the 3 biological replicates in each genotype were assayed twice
@@ -95,6 +102,13 @@ heart_sum1
 ```
 
 ```{r}
+install.packages("ggplot2",
+                 repos ="http://cran.us.r-project.org")
+
+```
+
+
+```{r}
 #group means plus standards
 #essentially looking to plot this onto the individual data plot
 ggplot(heart_sum1, aes(x = Genotype, y = Normalized.Signal))+
@@ -103,18 +117,25 @@ ggplot(heart_sum1, aes(x = Genotype, y = Normalized.Signal))+
                 ymax = Normalized.Signal + sd))
 ```
 
-###individual data and group means plot
+##individual data and group means plot
 ```{r}
 #ggplot(heart) plots Normalized.Signal as a function of Genotype
 #geom_point plots individual observations on this plot
 #geom_errorbar points to my group means df heart_sum1 and the bounds of the mean+/- standard error bar
 #the successive geom_point plots the mean; specify color so it does not conflict with the color call in the first geom_point
 
+library(ggplot2)
 ggplot(heart,aes(x = Genotype,
                  y = Normalized.Signal))+
   geom_point(aes(color = Name,
                  shape = Organ),
-             alpha = 1.0)+
+             alpha = 2.0,
+             size = 2,
+             position = position_jitterdodge())+
+    geom_boxplot(outlier.shape = NA,
+               alpha = 0.1)+
+  stat_summary(fun= mean, geom="point",
+               shape=3, size=5,stroke = 1,color="red", fill="black")+
   geom_errorbar(data = heart_sum1,
                 aes(ymin = Normalized.Signal-sd,
                     ymax = Normalized.Signal+sd,
@@ -126,26 +147,53 @@ ggplot(heart,aes(x = Genotype,
   xlab("Naa10 genotype")+
   ylab("NAA10 signal normalized to
        REVERT total protein stain")+
-  ggtitle("")
+  theme_bw(base_size = 12, base_family = "Helvetica")
 ```
 
-
-
-
-
-###dplyr group data
+###Organ on X-axis
 ```{r}
+ggplot(heart,aes(x = Organ,
+                 y = Normalized.Signal,
+                 fill = Genotype))+
+  geom_point(aes(shape = Genotype),
+             alpha = 2.0,
+             size = 2,
+             position = position_jitterdodge())+
+  geom_boxplot(outlier.shape = NA,
+               alpha = 0.1)+
+  xlab("Naa10 genotype")+
+  ylab("NAA10 signal normalized to
+       REVERT total protein stain")+
+  theme_bw(base_size = 12, base_family = "Helvetica")
+```
 
+###Organ fill?
+```{r}
+ggplot(heart,aes(x = Genotype,
+                 y = Normalized.Signal,
+                 fill = Organ,
+                 alpha = 2.0))+
+  geom_point(aes(shape = Organ),
+             alpha = 2.0,
+             size = 2,
+             position = position_jitterdodge())+
+  geom_boxplot(outlier.shape = NA,
+               alpha = 0.1)+
+  xlab("Naa10 genotype")+
+  ylab("NAA10 signal normalized to
+       REVERT total protein stain")+
+  theme_bw(base_size = 12, base_family = "Helvetica")
 ```
 
 
 
 ##Unpaired t-test of NAA10 signal grouped by Genotype
 
-Null hypothesis: there is no mean difference in NAA10 signal between Naa10 female
-genotypes
+Null hypothesis: there is no mean difference in NAA10 signal
+between Naa10 male genotypes
 
-Alternative: there is a difference in NAA10 signal between Naa10 female genotypes
+Alternative: there is a difference in NAA10 signal between Naa10
+male genotypes
 ```{r}
 t.test(heart$Normalized.Signal~heart$Genotype,
        paired = F,
