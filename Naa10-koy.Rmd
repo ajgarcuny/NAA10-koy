@@ -84,9 +84,14 @@ install.packages("Rmisc", repos = "http://cran.us.r-project.org")
 ##Replicate grouping pertains to replicate blot grouping
 
 library(Rmisc)
-heart_sum <- summarySE(heart, measurevar="Normalized.Signal", groupvars=c("Organ","Genotype"))
+heart_sum <- summarySE(heart, measurevar="Normalized.Signal",
+                       groupvars=c("Organ","Genotype"))
 
 heart_sum
+```
+
+```{r}
+
 ```
 
 
@@ -205,8 +210,10 @@ library(car)
 
 koygen.aov <- lm(Normalized.Signal~Genotype*Organ,heart)
 
+plot(koygen.aov)
 summary(koygen.aov)
 Anova(koygen.aov, type = "III")
+TukeyHSD(aov(Normalized.Signal~Genotype*Organ,heart),"Genotype")
 ```
 
 
