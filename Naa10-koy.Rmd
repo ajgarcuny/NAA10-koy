@@ -16,7 +16,7 @@ and Naa10 WT/Y mice were immunoblotted. Blots of respective organ lysates were
 repeated twice.
 
 
-##Data
+# Data
 ```{r}
 library(tidyverse)
 
@@ -43,7 +43,7 @@ head(heart)
 
 ##changed Name and Replicate from integer data to replicate data
 ```
-##distribution of NAA10 signal
+## distribution of NAA10 signal
 ```{r}
 ggplot(heart,aes(x = Genotype,
                  y = Normalized.Signal,
@@ -62,7 +62,7 @@ ggplot(heart,aes(x = Genotype,
 
 
 
-##Group-mean datasets in dplyr
+## Group-mean datasets in dplyr
 ```{r}
 #I am more familiar with using summarySE in Rmisc to generate a dataframe that contains group means
 
@@ -70,14 +70,14 @@ ggplot(heart,aes(x = Genotype,
 ```
 
 
-#Summary data of Naa10 het heart and hypothesis testing
+# Summary data of Naa10 het heart and hypothesis testing
 ```{r}
 
 install.packages("Rmisc", repos = "http://cran.us.r-project.org")
 
 ```
 
-##Grouping by Genotype and Organ
+## Grouping by Genotype and Organ
 ```{r}
 ##Summary statistics for Normalized NAA10 signal
 ##Possible groupings: genotype, replicate, organ
@@ -90,7 +90,7 @@ heart_sum
 ```
 
 
-##Genotype group mean
+## Genotype group mean
 ```{r}
 ##Normalized NAA10 signal is grouped by genotype.
 ##N = 6 for both genotypes because the 3 biological replicates in each genotype were assayed twice
@@ -101,23 +101,22 @@ heart_sum1 <- summarySE(heart, measurevar="Normalized.Signal", groupvars=c("Geno
 heart_sum1
 ```
 
-```{r}
-install.packages("ggplot2",
-                 repos ="http://cran.us.r-project.org")
 
-```
 
 
 ```{r}
 #group means plus standards
 #essentially looking to plot this onto the individual data plot
+
+library(ggplot2)
+
 ggplot(heart_sum1, aes(x = Genotype, y = Normalized.Signal))+
   geom_point()+
   geom_errorbar(aes(ymin = Normalized.Signal - sd,
                 ymax = Normalized.Signal + sd))
 ```
 
-##individual data and group means plot
+## individual data and group means plot
 ```{r}
 #ggplot(heart) plots Normalized.Signal as a function of Genotype
 #geom_point plots individual observations on this plot
@@ -150,7 +149,7 @@ ggplot(heart,aes(x = Genotype,
   theme_bw(base_size = 12, base_family = "Helvetica")
 ```
 
-###Organ on X-axis
+### Organ on X-axis
 ```{r}
 ggplot(heart,aes(x = Organ,
                  y = Normalized.Signal,
@@ -167,10 +166,11 @@ ggplot(heart,aes(x = Organ,
   theme_bw(base_size = 12, base_family = "Helvetica")
 ```
 
-###main fig; Organ fill?
+## main fig; Organ fill?
 ```{r}
 library(ggplot2)
-ggplot(heart,aes(x = Genotype,
+
+main.fig <- ggplot(heart,aes(x = Genotype,
                  y = Normalized.Signal,
                  fill = Organ,
                  alpha = 2.0))+
@@ -180,15 +180,38 @@ ggplot(heart,aes(x = Genotype,
              position = position_jitterdodge())+
   geom_boxplot(outlier.shape = NA,
                alpha = 0.1)+
+  stat_summary(fun = mean, color = "black", position = position_dodge(0.75),width = 0.2,
+             geom = "crossbar",
+             show.legend = FALSE)+
+  geom_errorbar(data = heart_sum, aes(ymin=Normalized.Signal-sd,
+                     ymax=Normalized.Signal+sd),
+                 width=.2,
+                 position=position_dodge(0.75))+
   xlab("Naa10 genotype")+
   ylab("NAA10 signal normalized to
        REVERT total protein stain")+
+  scale_alpha(guide = "none")+
   theme_bw(base_size = 12, base_family = "Helvetica")
+
+main.fig
+```
+
+
+# hypothesis testing
+
+## two-way ANOVA
+```{r}
+library(car)
+
+koygen.aov <- lm(Normalized.Signal~Genotype*Organ,heart)
+
+summary(koygen.aov)
+Anova(koygen.aov, type = "III")
 ```
 
 
 
-##Unpaired t-test of NAA10 signal grouped by Genotype
+## Unpaired t-test of NAA10 signal grouped by Genotype
 
 Null hypothesis: there is no mean difference in NAA10 signal
 between Naa10 male genotypes
@@ -202,11 +225,7 @@ t.test(heart$Normalized.Signal~heart$Genotype,
 ```
 
 
-According to Welch's two sample t-test, there is a significant difference in
-NAA10 signal between Naa10 female genotypes (t = -14.5, df = 9.9, p < 0.05).
-
-
-##paired t-test of NAA10 signal between replicates of individual animals
+## paired t-test of NAA10 signal between replicates of individual animals
 
 Null hypothesis: there is no difference in NAA10 signal of individual livers on replicate blots
 Alternative hypothesis: there is a difference in NAA10 signal of individual livers on replicate blots
@@ -216,7 +235,7 @@ I fail to reject the null hypothesis. Ie, when I analyze the normalized NAA10 si
 in technical replicates of each biological replicate, there is no difference in the
 NAA10 signal between technical replicates.
 
-#Other plot ideas
+# Other plot ideas
 ```{r}
 #plotted error bars for intra-subject variation
 #need also group error bar (mean +/- sd)
@@ -253,7 +272,7 @@ ggplot(heart,aes(x = Genotype,
 ```
 
 
-###Plotted by biological replicate
+### Plotted by biological replicate
 ```{r}
 ggplot(heart, aes(x = Name,
                   y = Normalized.Signal,
