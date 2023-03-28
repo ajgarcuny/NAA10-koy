@@ -196,7 +196,7 @@ main.fig <- ggplot(heart,aes(x = Genotype,
   ylab("NAA10 signal normalized to
        REVERT total protein stain")+
   scale_alpha(guide = "none")+
-  theme_bw(base_size = 12, base_family = "Helvetica")
+  theme_bw(base_size = 12, base_family = "Helvetica")+scale_fill_grey()
 
 main.fig
 ```
